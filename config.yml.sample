@@ -1,0 +1,10 @@
+psql:
+  ip: "192.168.1.1"
+  port: 5432
+  user: "dbuser"
+  dbname: "dbname"
+  password: "dbpass"
+flask:
+  host: "127.0.0.1"
+  port: 8080
+

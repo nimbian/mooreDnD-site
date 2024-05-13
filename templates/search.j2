@@ -1,0 +1,41 @@
+{% extends "base.j2" %}
+{% block content %}
+
+<h2>Cards<h2>
+
+<table id="searchTable" class="display tbl" width="100%">
+    <thead>
+	<tr>
+		<th>user</th>
+		<th>CardID</th>
+        	<th>CR</th>
+        	<th>Card</th>
+        	<th>Expansion</th>
+        	<th>Grade</th>
+        	<th>Holo</th>
+        	<th>Edition</th>
+        	<th>Value</th>
+        	<th>Set</th>
+	</tr>
+    </thead>
+</table>
+
+<script>
+$(document).ready(function(){
+    $.ajax({
+        url: "{{ url_for('getAll') }}",
+        type: "GET",
+        success: function (d){
+            $("#searchTable").DataTable({
+                data: d,
+                order: [[2, 'asc']],
+                //columnDefs: [{type: 'natural', targets:[1,2,3]},{type: 'cr', targets:2}],
+                columnDefs: [{type: 'natural', targets:[3]},{type: 'cr', targets:2}],
+            })        
+        }
+    });
+
+ 
+});
+</script>
+{% endblock %}

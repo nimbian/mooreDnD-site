@@ -1,0 +1,130 @@
+<script>
+$( document ).ready(function(){
+
+function destroyChild(row) {
+    var table = $("table", row.child());
+    table.detach();
+    table.DataTable().destroy();
+
+    // And then hide the row
+    row.child.hide();
+}
+function createChild(row, tr, did){
+    var c =$(tr).children("td")[1].textContent.split(' ')[0];
+    var tmp = c.substring(2,c.length - 1);
+    var t = $('<table class="display" width="100%"/>');
+    console.log(typeof did);
+    t.append("<thead><tr><th>CardID</th><th>CR</th><th>Card</th><th>Expansion</th><th>Grade</th><th>Holo</th><th>Edition</th><th>Value</th><th>Set</th></tr></thead>")
+    var ul = "{{ url_for('getCs', c='TMP', did=did) }}".replace("TMP", tmp)
+    // Display it the child row
+    row.child( t ).show();
+
+    // Initialise as a DataTable
+     $.ajax({
+                 url: ul,
+         type: "GET",
+         success: function (d){
+         var cs = t.DataTable({
+                           destroy: true,
+                           data: d,
+                           order: [[2, 'asc']], columnDefs: [{type: 'natural', targets:2},{type: 'cr', targets:1}]
+        });
+         }
+     });
+}
+function hideTables(){
+    $('#msets').hide()
+    $('#isets').hide()
+}
+
+hideTables()
+
+function openSet(evt, did, setName){
+    if(setName == 'Monsters'){
+        $('#msets').show()
+    }
+    if(setName == 'Items'){
+        $('#isets').show()
+    }
+
+
+    var i, tablinks;
+    tablinks = document.getElementsByClassName("tablinks");
+          for (i = 0; i < tablinks.length; i++) {
+              tablinks[i].className = tablinks[i].className.replace(" active", "");
+          }
+    const fulls = ["Full Collection", "Monsters", "Items"];
+    if(fulls.includes(setName)){
+         $.ajax({
+                         url: "{{ url_for('getCards', s='SETNAME', did=did) }}".replace("SETNAME",setName),
+             type: "GET",
+             success: function (d){
+             var cs = $("#cs").DataTable({
+                               destroy: true,
+                               data: d,
+                });
+                 $("#setTable_wrapper").hide();
+                 $("#cs_wrapper").show();
+             }
+         });
+    }
+    else{
+        $.ajax({
+                         url: "{{ url_for('getCards', s='SETNAME', did=did) }}".replace("SETNAME",setName),
+            type: "GET",
+            success: function (d){
+             var tmp = $('#setTable_wrapper')
+             var tmpP = $('#setTable_wrapper').parent()
+             tmp.remove()
+             tmpP.append("<table id=setTable class=\"display tbl\" width=\"100%\"><thead><tr><th></th><th>Card</th><th>Aquired?</th><th>Quantity</th></tr></thead></table>");
+             var cs = $("#setTable").DataTable({
+                               data: d,
+                               order: [[2, 'asc']], columnDefs: [{type: 'natural', targets:0}],
+                               columns:[{className: 'details-control', orderable: false, data: null, defaultContent: ''},
+                                        {data: 'name'},{data: 'has'},{data: 'count'}],
+
+                               'rowCallback': function(row, data, index){
+                                               if (data['has'] == 'Yes'){
+                                                               $('td', row).css('color', '#7CFC00')
+                                               }
+                                }
+                });
+                 $("#cs_wrapper").hide();
+                 $("#setTable_wrapper").show();
+            cs.on('click', 'td.details-control', function (e) {
+                            var tr = $( e.target.closest('tr'));
+                            var row = cs.row( tr );
+                            console.log(tr);
+                            console.log(row);
+                            if (row.child.isShown()){
+                                            destroyChild(row);
+                                            tr.removeClass('shown');
+                            }
+                            else{
+                                createChild(row, tr, did);
+                                tr.addClass('shown');
+                            }
+                 });
+
+            }
+        });
+    }
+}
+        did = {{ request.view_args }}['user'];
+        $('#Full_Collection').click(function(){hideTables();openSet(event, did, 'Full Collection')});
+        $('#Monsters').click(function(){hideTables();openSet(event, did, 'Monsters')});
+        $('#Items').click(function(){hideTables();openSet(event, did, 'Items')});
+        $('#Base_Set').click(function(){hideTables();openSet(event, did, 'Base Set')});
+        $('#Heroes').click(function(){hideTables();openSet(event, did, 'Heroes')});
+        $('#Promos').click(function(){hideTables();openSet(event, did, 'Promos')});
+        {% for set in msets %}
+            $("#{{ set[0].replace('?','9').replace("'",'8').replace(" ",'_') }}").click(function(){openSet(event, did, "{{ set[0].replace('?','9').replace("'",'8').replace(" ",'_') }}")});
+        {% endfor %}
+        {% for set in isets %}
+            $("#{{ set[0].replace('?','9').replace("'",'8').replace(" ",'_') }}").click(function(){openSet(event, did, "{{ set[0].replace('?','9').replace("'",'8').replace(" ",'_') }}")});
+        {% endfor %}
+        openSet(event, did, 'Full Collection');
+});
+</script>
+
+
