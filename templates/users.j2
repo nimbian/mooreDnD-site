@@ -14,7 +14,7 @@
 	<tbody>
             {% for u in users %}
 	    <tr>
-            <td><a href="https://www.moorednd.com/satchemon/user/{{ u[1] }}">{{ u[0]}}</a><br></td>
+            <td><a href="{{ url_for('users', user=u[1]) }}">{{ u[0]}}</a><br></td>
 	    <td>{{ u[2] }}</td>
 	    <td>{{ u[3]|round(3) }}</td>
 	    <td>{{ u[4]|round(3) }}</td>
