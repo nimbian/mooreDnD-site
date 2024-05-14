@@ -18,7 +18,6 @@ def apiGetCards(did,s):
     if type(did) != str:
             return []
     s = s.replace('_',' ').replace('8',"'").replace('9','?')
-    print(s)
     if s == 'Full Collection':
         tmp = getFullCollection(did)
         x = []
