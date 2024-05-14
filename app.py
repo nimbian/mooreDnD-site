@@ -42,3 +42,4 @@ def index():
 
 if __name__ == '__main__':
     app.run(host=CONFIG['flask']['host'], port=CONFIG['flask']['port'])
+
