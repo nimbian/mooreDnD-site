@@ -1,0 +1,4 @@
+*.yml
+__pycache__/
+virt/
+*.swp
