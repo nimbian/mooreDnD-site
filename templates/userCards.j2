@@ -6,13 +6,15 @@
 
 <div class="tab">
 	<button id="Full_Collection" class="mainbtn tablinks">Full Collection</button>
-	<button id="Monsters" class="mainbtn tablinks">Monsters</button>
+	<button id="BaseSets" class="mainbtn tablinks">Base Sets</button>
+	<button id="Monsters" class="mainbtn tablinks">Creatures</button>
 	<button id="Items" class="mainbtn tablinks">Items</button>
-	<button id="Base_Set" class="mainbtn tablinks">Monster Base Set</button>
-	<button id="Item_Base_Set" class="mainbtn tablinks">Item Base Set</button>
-	<button id="Heroes" class="mainbtn tablinks">Heroes</button>
-	<button id="Promos" class="mainbtn tablinks">Promos</button>
+	<button id="Locations" class="mainbtn tablinks">Locations</button>
+	<button id="Exps" class="mainbtn tablinks">Expansions</button>
 	<br>
+	<button id="Base_Set" class="mainbtn tablinks">Creature Base Set</button>
+	<button id="Item_Base_Set" class="mainbtn tablinks">Item Base Set</button>
+	<button id="Loc_Base_Set" class="mainbtn tablinks">Location Base Set</button>
 	<div id="msets">
 	{% for set in msets %}
 	<button class="tablinks" id="{{ set[0].replace('?','9').replace("'",'8').replace(" ",'_') }}">{{ set[0] }}</button>
@@ -21,6 +23,16 @@
 	<div id="isets">
 	{% for set in isets %}
 	<button class="tablinks" id="{{ set[0].replace('?','9').replace("'",'8').replace(" ",'_') }}">{{ set[0] }}</button>
+	{% endfor %}
+	</div>
+	<div id="lsets">
+	{% for set in lsets %}
+	<button class="tablinks" id="{{ set[0].replace('?','9').replace("'",'8').replace(" ",'_') }}">{{ set[0] }}</button>
+	{% endfor %}
+	</div>
+	<div id="exps">
+	{% for exp in exps %}
+	<button class="tablinks" id="{{ exp[0] }}">{{ exp[1] }}</button>
 	{% endfor %}
 	</div>
 </div>

@@ -17,10 +17,17 @@
 </head>
 {% endblock %}
      <div style="overflow: hidden; background-color: #333" class="topnav">
-             <a href="{{ url_for('home') }}">Home Page</a>
+	     <!--<a href="{{ url_for('home') }}">Home Page</a>-->
              <a href="{{ url_for('index') }}">All users</a>
              <a href="{{ url_for('search') }}">Search</a>
-     	<a style="float: right;" href="https://buymeacoffee.com/satchemonbot"><img alt="Buy Me A Coffee" class="bullet" src= {{ url_for('static', filename = 'css/images/bmc-button.png') }} height="35"></a>
+     	     <a style="float: right;" href="https://buymeacoffee.com/satchemonbot"><img alt="Buy Me A Coffee" class="bullet" src= {{ url_for('static', filename = 'css/images/bmc-button.png') }} height="35"></a>
+	     {% if current_user.is_authenticated %}
+	       <a href="{{ url_for('mycards') }}">My Cards</a>
+	       <a style="float: right;" href="{{ url_for('logout') }}"><img alt="Sign Out" class="bullet" src= {{ url_for('static', filename = 'css/images/Sign-out.png') }} height="35"></a>
+	       <p style="float: right; align-items: center;"> Signed in as: {{ session.user }}</p>
+	     {% else %}
+	       <a style="float: right;" href="{{ url_for('discord_login') }}"><img alt="Sign In" class="bullet" src= {{ url_for('static', filename = 'css/images/Sign-in.png') }} height="35"></a>
+	     {% endif %}
      </div>
 <body>
    

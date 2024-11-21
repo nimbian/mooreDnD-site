@@ -13,7 +13,6 @@ function createChild(row, tr, did){
     var c =$(tr).children("td")[1].textContent.split(' ')[0];
     var tmp = c.substring(2,c.length - 1);
     var t = $('<table class="display" width="100%"/>');
-    console.log(typeof did);
     t.append("<thead><tr><th>CardID</th><th>CR</th><th>Card</th><th>Expansion</th><th>Grade</th><th>Holo</th><th>Edition</th><th>Value</th><th>Set</th></tr></thead>")
     var ul = "{{ url_for('getCs', c='TMP', did=did) }}".replace("TMP", tmp)
     // Display it the child row
@@ -27,7 +26,12 @@ function createChild(row, tr, did){
          var cs = t.DataTable({
                            destroy: true,
                            data: d,
-                           order: [[2, 'asc']], columnDefs: [{type: 'natural', targets:2},{type: 'cr', targets:1}]
+                           order: [[2, 'asc']], columnDefs: [{type: 'natural', targets:2},{type: 'cr', targets:1}],
+                           'rowCallback': function(row, data, index){
+                                           if (data[4] == 10 && data[5] == 'Yes'){
+                                                           $('td', row).css('color', '#fffb05')
+                                           }
+                            }
         });
          }
      });
@@ -35,6 +39,21 @@ function createChild(row, tr, did){
 function hideTables(){
     $('#msets').hide()
     $('#isets').hide()
+    $('#lsets').hide()
+    $('#exps').hide()
+    $('#Base_Set').hide()
+    $('#Item_Base_Set').hide()
+    $('#Loc_Base_Set').hide()
+}
+
+function showBaseSets(){
+    $('#Base_Set').show()
+    $('#Item_Base_Set').show()
+    $('#Loc_Base_Set').show()
+}
+
+function showExps(){
+    $('#exps').show()
 }
 
 hideTables()
@@ -46,6 +65,12 @@ function openSet(evt, did, setName){
     if(setName == 'Items'){
         $('#isets').show()
     }
+    if(setName == 'Locations'){
+        $('#lsets').show()
+    }
+    if(setName.includes('Base Set')){
+        showBaseSets()
+    }
 
 
     var i, tablinks;
@@ -53,7 +78,7 @@ function openSet(evt, did, setName){
           for (i = 0; i < tablinks.length; i++) {
               tablinks[i].className = tablinks[i].className.replace(" active", "");
           }
-    const fulls = ["Full Collection", "Monsters", "Items"];
+    const fulls = ["Full Collection", "Monsters", "Items", "Locations"];
     if(fulls.includes(setName)){
          $.ajax({
                          url: "{{ url_for('getCards', s='SETNAME', did=did) }}".replace("SETNAME",setName),
@@ -62,6 +87,11 @@ function openSet(evt, did, setName){
              var cs = $("#cs").DataTable({
                                destroy: true,
                                data: d,
+                               'rowCallback': function(row, data, index){
+                                               if (data[4] == 10 && (data[5] == 'Yes' || data[5] == 1)){
+                                                               $('td', row).css('color', '#fffb05')
+                                               }
+                                }
                 });
                  $("#setTable_wrapper").hide();
                  $("#cs_wrapper").show();
@@ -94,8 +124,6 @@ function openSet(evt, did, setName){
             cs.on('click', 'td.details-control', function (e) {
                             var tr = $( e.target.closest('tr'));
                             var row = cs.row( tr );
-                            console.log(tr);
-                            console.log(row);
                             if (row.child.isShown()){
                                             destroyChild(row);
                                             tr.removeClass('shown');
@@ -114,8 +142,12 @@ function openSet(evt, did, setName){
         $('#Full_Collection').click(function(){hideTables();openSet(event, did, 'Full Collection')});
         $('#Monsters').click(function(){hideTables();openSet(event, did, 'Monsters')});
         $('#Items').click(function(){hideTables();openSet(event, did, 'Items')});
+        $('#Locations').click(function(){hideTables();openSet(event, did, 'Locations')});
+        $('#BaseSets').click(function(){hideTables();showBaseSets();openSet(event, did, 'BaseSets')});
         $('#Base_Set').click(function(){hideTables();openSet(event, did, 'Base Set')});
         $('#Item_Base_Set').click(function(){hideTables();openSet(event, did, 'Item Base Set')});
+        $('#Loc_Base_Set').click(function(){hideTables();openSet(event, did, 'Location Base Set')});
+        $('#Exps').click(function(){hideTables();showExps()});
         $('#Heroes').click(function(){hideTables();openSet(event, did, 'Heroes')});
         $('#Promos').click(function(){hideTables();openSet(event, did, 'Promos')});
         {% for set in msets %}
@@ -123,6 +155,13 @@ function openSet(evt, did, setName){
         {% endfor %}
         {% for set in isets %}
             $("#{{ set[0].replace('?','9').replace("'",'8').replace(" ",'_') }}").click(function(){openSet(event, did, "{{ set[0].replace('?','9').replace("'",'8').replace(" ",'_') }}")});
+        {% endfor %}
+        {% for set in lsets %}
+            $("#{{ set[0].replace('?','9').replace("'",'8').replace(" ",'_') }}").click(function(){openSet(event, did, "{{ set[0].replace('?','9').replace("'",'8').replace(" ",'_') }}")});
+        {% endfor %}
+        {% for exp in exps %}
+            console.log("{{ exp[1] }}");
+            $("#{{ exp[0] }}").click(function(){openSet(event, did, "{{ exp[1].replace('?','9').replace("'",'8').replace(" ",'_') }}")});
         {% endfor %}
         openSet(event, did, 'Full Collection');
 });
