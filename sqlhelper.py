@@ -21,7 +21,7 @@ def getBaseSetCards():
 
 def getMonSets():
     with mydb.db_cursor() as cur:
-        cur.execute("SELECT name from sets where rwid > 0 and rwid <50")
+        cur.execute("SELECT name from sets where rwid > 0 and rwid <50 and name not in (select expansion from expansions)")
         return cur.fetchall()
 
 def getItemSets():
