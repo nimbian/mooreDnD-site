@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Drive Slideshow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Josefin+Sans:wght@100;300&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── Reset & base ─────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0a0a0a;
+      --surface:  #111111;
+      --border:   rgba(255,255,255,0.07);
+      --text:     #e8e4dc;
+      --muted:    rgba(232,228,220,0.4);
+      --accent:   #c8a96e;
+      --accent2:  #8c6d3f;
+      --slide-dur: 1s;           /* CSS transition duration */
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Josefin Sans', sans-serif;
+      font-weight: 100;
+      letter-spacing: 0.12em;
+      overflow: hidden;
+    }
+
+    /* ── Layout ───────────────────────────────────────────────────────── */
+    #app {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      height: 100vh;
+    }
+
+    /* ── Header ───────────────────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.4rem 2.5rem;
+      border-bottom: 1px solid var(--border);
+      z-index: 10;
+    }
+
+    .logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 300;
+      font-size: 1.35rem;
+      letter-spacing: 0.25em;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+
+    .logo span { font-style: italic; color: var(--text); }
+
+    #image-counter {
+      font-size: 0.68rem;
+      letter-spacing: 0.22em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    /* ── Stage ────────────────────────────────────────────────────────── */
+    #stage {
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Grain overlay */
+    #stage::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 3;
+      mix-blend-mode: overlay;
+      opacity: 0.6;
+    }
+
+    /* Slides sit in the same cell; opacity-based crossfade */
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity var(--slide-dur) ease-in-out;
+      z-index: 1;
+    }
+
+    .slide.active {
+      opacity: 1;
+      z-index: 2;
+    }
+
+    .slide img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
+      filter: brightness(0.96);
+    }
+
+    /* Caption */
+    .slide-caption {
+      position: absolute;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.62rem;
+      letter-spacing: 0.3em;
+      color: var(--muted);
+      text-transform: uppercase;
+      white-space: nowrap;
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    /* Vignette */
+    #vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.55) 100%);
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    /* Arrow nav */
+    .nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(10,10,10,0.45);
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 2.8rem;
+      height: 2.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 5;
+      transition: background 0.2s, border-color 0.2s;
+      backdrop-filter: blur(6px);
+    }
+
+    .nav-btn:hover { background: rgba(200,169,110,0.18); border-color: var(--accent); }
+    #btn-prev { left: 1.5rem; }
+    #btn-next { right: 1.5rem; }
+
+    .nav-btn svg { width: 1rem; height: 1rem; stroke: currentColor; fill: none; stroke-width: 1.5; }
+
+    /* ── Controls bar ─────────────────────────────────────────────────── */
+    footer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.2rem;
+      padding: 1rem 2.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .ctrl-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'Josefin Sans', sans-serif;
+      font-weight: 100;
+      font-size: 0.62rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      padding: 0.55rem 1.4rem;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .ctrl-btn:hover, .ctrl-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Speed selector */
+    #speed-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      color: var(--muted);
+      font-size: 0.62rem;
+      letter-spacing: 0.2em;
+    }
+
+    #speed-select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.62rem;
+      letter-spacing: 0.15em;
+      padding: 0.4rem 0.7rem;
+      cursor: pointer;
+      appearance: none;
+    }
+
+    /* Dots */
+    #dots {
+      display: flex;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 260px;
+    }
+
+    .dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--border);
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
+    }
+
+    .dot.active { background: var(--accent); transform: scale(1.5); }
+
+    /* Loading / error states */
+    #loading-screen {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.2rem;
+      z-index: 100;
+    }
+
+    #loading-screen.hidden { display: none; }
+
+    .spinner {
+      width: 32px; height: 32px;
+      border: 1px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #loading-msg {
+      font-size: 0.68rem;
+      letter-spacing: 0.3em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    #error-msg {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.8rem;
+      text-align: center;
+      padding: 2rem;
+      z-index: 100;
+    }
+
+    #error-msg h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 300;
+      font-size: 1.5rem;
+      color: var(--accent);
+      letter-spacing: 0.2em;
+    }
+
+    #error-msg p { color: var(--muted); font-size: 0.72rem; letter-spacing: 0.15em; max-width: 420px; }
+  </style>
+</head>
+<body>
+
+<!-- Loading screen -->
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <p id="loading-msg">Fetching images&hellip;</p>
+</div>
+
+<!-- Error screen -->
+<div id="error-msg">
+  <h2>Could not load images</h2>
+  <p id="error-detail"></p>
+</div>
+
+<!-- Main app -->
+<div id="app">
+  <header>
+    <div class="logo">Drive <span>Slideshow</span></div>
+    <div id="image-counter">— / —</div>
+  </header>
+
+  <div id="stage">
+    <div id="vignette"></div>
+
+    <button class="nav-btn" id="btn-prev" title="Previous">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <button class="nav-btn" id="btn-next" title="Next">
+      <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+
+  <footer>
+    <button class="ctrl-btn" id="btn-play">Pause</button>
+
+    <div id="dots"></div>
+
+    <div id="speed-wrap">
+      <span>Interval</span>
+      <select id="speed-select">
+        <option value="2000">2 s</option>
+        <option value="4000" selected>4 s</option>
+        <option value="6000">6 s</option>
+        <option value="10000">10 s</option>
+        <option value="20000">20 s</option>
+      </select>
+    </div>
+  </footer>
+</div>
+
+<script>
+  // ── State ──────────────────────────────────────────────────────────────────
+  let images  = [];
+  let current = 0;
+  let playing = true;
+  let timer   = null;
+  let interval = parseInt(document.getElementById('speed-select').value);
+
+  // ── DOM refs ───────────────────────────────────────────────────────────────
+  const stage     = document.getElementById('stage');
+  const counter   = document.getElementById('image-counter');
+  const dots      = document.getElementById('dots');
+  const btnPlay   = document.getElementById('btn-play');
+  const btnPrev   = document.getElementById('btn-prev');
+  const btnNext   = document.getElementById('btn-next');
+  const loading   = document.getElementById('loading-screen');
+  const errorBox  = document.getElementById('error-msg');
+  const speedSel  = document.getElementById('speed-select');
+
+  // ── Slide management ───────────────────────────────────────────────────────
+  function buildSlides() {
+    images.forEach((img, i) => {
+      const div = document.createElement('div');
+      div.className = 'slide';
+      div.id = `slide-${i}`;
+
+      const el = document.createElement('img');
+      el.src = `/image/${img.id}`;
+      el.alt = img.name;
+      el.loading = i < 2 ? 'eager' : 'lazy';
+
+      const cap = document.createElement('div');
+      cap.className = 'slide-caption';
+      cap.textContent = img.name.replace(/\.[^/.]+$/, ''); // strip extension
+
+      div.append(el, cap);
+      stage.appendChild(div);
+
+      // Dot
+      const dot = document.createElement('div');
+      dot.className = 'dot';
+      dot.addEventListener('click', () => goTo(i));
+      dots.appendChild(dot);
+    });
+  }
+
+  function goTo(index) {
+    const slides = stage.querySelectorAll('.slide');
+    const allDots = dots.querySelectorAll('.dot');
+
+    slides[current]?.classList.remove('active');
+    allDots[current]?.classList.remove('active');
+
+    current = (index + images.length) % images.length;
+
+    slides[current]?.classList.add('active');
+    allDots[current]?.classList.add('active');
+    counter.textContent = `${current + 1} / ${images.length}`;
+  }
+
+  function next() { goTo(current + 1); }
+  function prev() { goTo(current - 1); }
+
+  // ── Autoplay ───────────────────────────────────────────────────────────────
+  function startTimer() {
+    clearInterval(timer);
+    timer = setInterval(next, interval);
+  }
+
+  function togglePlay() {
+    playing = !playing;
+    btnPlay.textContent = playing ? 'Pause' : 'Play';
+    btnPlay.classList.toggle('active', !playing);
+    playing ? startTimer() : clearInterval(timer);
+  }
+
+  // ── Keyboard nav ──────────────────────────────────────────────────────────
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight') { next(); if (playing) startTimer(); }
+    if (e.key === 'ArrowLeft')  { prev(); if (playing) startTimer(); }
+    if (e.key === ' ')          { togglePlay(); e.preventDefault(); }
+  });
+
+  // ── Controls ───────────────────────────────────────────────────────────────
+  btnNext.addEventListener('click', () => { next(); if (playing) startTimer(); });
+  btnPrev.addEventListener('click', () => { prev(); if (playing) startTimer(); });
+  btnPlay.addEventListener('click', togglePlay);
+
+  speedSel.addEventListener('change', () => {
+    interval = parseInt(speedSel.value);
+    if (playing) startTimer();
+  });
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  async function init() {
+    try {
+      const resp = await fetch('/api/cs/images');
+      const data = await resp.json();
+
+      if (data.error) throw new Error(data.error);
+      if (!data.length) throw new Error('No images found in the specified Drive folder.');
+
+      images = data;
+      buildSlides();
+      goTo(0);
+      loading.classList.add('hidden');
+      startTimer();
+    } catch (err) {
+      loading.classList.add('hidden');
+      errorBox.style.display = 'flex';
+      document.getElementById('error-detail').textContent = err.message;
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>
